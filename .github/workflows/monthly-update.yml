@@ -1,0 +1,40 @@
+name: Monthly Article Update
+
+on:
+  schedule:
+    # 매월 1일 오전 3시 (UTC) = 한국시간 낮 12시
+    - cron: '0 3 1 * *'
+  workflow_dispatch: # 수동 실행도 가능
+
+jobs:
+  update-articles:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Fetch articles from MusculoskeletalKey
+        run: node fetch-articles.js
+
+      - name: Check for changes
+        id: check
+        run: |
+          git diff --quiet articles.json && echo "changed=false" >> $GITHUB_OUTPUT || echo "changed=true" >> $GITHUB_OUTPUT
+
+      - name: Commit and push if changed
+        if: steps.check.outputs.changed == 'true'
+        run: |
+          git config user.name "GitHub Actions Bot"
+          git config user.email "actions@github.com"
+          git add articles.json
+          ARTICLE_COUNT=$(node -e "console.log(JSON.parse(require('fs').readFileSync('articles.json','utf8')).length)")
+          git commit -m "Auto-update: ${ARTICLE_COUNT} articles fetched on $(date -u +'%Y-%m-%d')"
+          git push
