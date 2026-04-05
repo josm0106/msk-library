@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no">
-<title>정형외과 문헌 도서관 - MSK Orthopedic Library</title>
+<title>ì íì¸ê³¼ ë¬¸í ëìê´ - MSK Orthopedic Library</title>
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
 :root{--bg:#1a1a1a;--bg2:#252525;--bg3:#2d2d2d;--tx:#e0e0e0;--tx2:#a8a8a8;--ac:#00d4ff;--ach:#00a8cc;--card:#2a2a2a;--bdr:#404040;--ok:#4caf50;--err:#f44336}
@@ -78,43 +78,83 @@ header{background:rgba(37,37,37,.95);border-bottom:1px solid var(--bdr);padding:
 .wrap{padding:1rem}
 .tabs{gap:.25rem}.tab{padding:.5rem .8rem;font-size:.85rem}
 }
+
+/* Login Screen */
+#loginScreen{position:fixed;top:0;left:0;width:100%;height:100%;background:var(--bg);z-index:99999;display:flex;align-items:center;justify-content:center}
+#loginScreen.hidden{display:none}
+.login-box{background:var(--card);border:1px solid var(--bdr);border-radius:16px;padding:2.5rem;text-align:center;max-width:380px;width:90%}
+.login-box h2{font-size:1.5rem;background:linear-gradient(135deg,var(--ac),#00f5ff);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;margin-bottom:.5rem}
+.login-box p{color:var(--tx2);font-size:.9rem;margin-bottom:1.5rem}
+.login-box input{width:100%;padding:.75rem 1rem;background:var(--bg3);border:1px solid var(--bdr);border-radius:8px;color:var(--tx);font-size:1rem;text-align:center;margin-bottom:1rem}
+.login-box input:focus{outline:none;border-color:var(--ac);box-shadow:0 0 8px rgba(0,212,255,.2)}
+.login-box button{width:100%;padding:.75rem;background:linear-gradient(135deg,var(--ac),#00a8cc);border:none;border-radius:8px;color:#fff;font-size:1rem;font-weight:600;cursor:pointer;transition:opacity .3s}
+.login-box button:hover{opacity:.85}
+.login-err{color:var(--err);font-size:.85rem;margin-top:.5rem;min-height:1.2rem}
+#mainContent{display:none}
+#mainContent.show{display:block}
 </style>
 </head>
 <body>
+
+<div id="loginScreen">
+<div class="login-box">
+<h2>MSK Orthopedic Library</h2>
+<p>접근이 제한된 사이트입니다.<br>비밀번호를 입력해주세요.</p>
+<input type="password" id="loginPw" placeholder="Password" autofocus>
+<button onclick="checkLogin()">Enter</button>
+<div class="login-err" id="loginErr"></div>
+</div>
+</div>
+<script>
+const PW_HASH='9466c70d025598f4dee0e4876b22886a72191a1e6521a7315c8abc3ad6c4ad11';
+async function sha256(str){const buf=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(str));return[...new Uint8Array(buf)].map(b=>b.toString(16).padStart(2,'0')).join('')}
+async function checkLogin(){
+const pw=document.getElementById('loginPw').value;
+const hash=await sha256(pw);
+if(hash===PW_HASH){
+sessionStorage.setItem('msk_auth','1');
+document.getElementById('loginScreen').classList.add('hidden');
+document.getElementById('mainContent').classList.add('show');
+}else{document.getElementById('loginErr').textContent='비밀번호가 틀렸습니다.';}
+}
+document.getElementById('loginPw').addEventListener('keydown',e=>{if(e.key==='Enter')checkLogin();});
+if(sessionStorage.getItem('msk_auth')==='1'){document.getElementById('loginScreen').classList.add('hidden');document.addEventListener('DOMContentLoaded',()=>{document.getElementById('mainContent').classList.add('show');});}
+</script>
+<div id="mainContent">
 <div id="topBar"></div>
 <header>
 <div class="hdr">
 <div>
-<h1>정형외과 문헌 도서관</h1>
+<h1>ì íì¸ê³¼ ë¬¸í ëìê´</h1>
 <small>MSK Orthopedic Library</small>
 </div>
 <div class="search">
-<input type="text" id="searchInput" placeholder="검색... (Search)">
+<input type="text" id="searchInput" placeholder="ê²ì... (Search)">
 </div>
 <div class="stats">
-<div class="stat"><span class="l">전체</span><span class="v" id="stTotal">0</span></div>
-<div class="stat"><span class="l">읽음</span><span class="v" id="stRead">0</span></div>
-<div class="stat"><span class="l">표시</span><span class="v" id="stDisp">0</span></div>
+<div class="stat"><span class="l">ì ì²´</span><span class="v" id="stTotal">0</span></div>
+<div class="stat"><span class="l">ì½ì</span><span class="v" id="stRead">0</span></div>
+<div class="stat"><span class="l">íì</span><span class="v" id="stDisp">0</span></div>
 </div>
 </div>
 </header>
 <div class="wrap">
 <div class="tabs">
-<button class="tab on" data-v="cat">카테고리</button>
-<button class="tab" data-v="all">전체 문헌</button>
-<button class="tab" data-v="read">읽은 문헌</button>
-<button class="tab" data-v="set">설정</button>
+<button class="tab on" data-v="cat">ì¹´íê³ ë¦¬</button>
+<button class="tab" data-v="all">ì ì²´ ë¬¸í</button>
+<button class="tab" data-v="read">ì½ì ë¬¸í</button>
+<button class="tab" data-v="set">ì¤ì </button>
 </div>
 <div id="vCat" class="view on"></div>
 <div id="vAll" class="view"></div>
 <div id="vRead" class="view"></div>
 <div id="vSet" class="view">
 <div class="settings">
-<h3>설정 (Settings)</h3>
-<p>캐시된 문헌 데이터를 삭제하면 다음 방문 시 다시 로딩합니다.</p>
-<button class="sbtn" onclick="clearCache()">캐시 삭제</button>
-<p style="margin-top:1.5rem">읽기 기록을 모두 초기화합니다.</p>
-<button class="sbtn" onclick="clearRead()">읽기 기록 초기화</button>
+<h3>ì¤ì  (Settings)</h3>
+<p>ìºìë ë¬¸í ë°ì´í°ë¥¼ ì­ì íë©´ ë¤ì ë°©ë¬¸ ì ë¤ì ë¡ë©í©ëë¤.</p>
+<button class="sbtn" onclick="clearCache()">ìºì ì­ì </button>
+<p style="margin-top:1.5rem">ì½ê¸° ê¸°ë¡ì ëª¨ë ì´ê¸°íí©ëë¤.</p>
+<button class="sbtn" onclick="clearRead()">ì½ê¸° ê¸°ë¡ ì´ê¸°í</button>
 <p style="margin-top:1.5rem" id="cacheInfo"></p>
 </div>
 </div>
@@ -147,22 +187,22 @@ function getRInfo(id){return getR()[id]||null;}
 function togR(id){const r=getR();if(r[id])delete r[id];else r[id]={d:new Date().toISOString().slice(0,10),c:1,lr:new Date().toISOString().slice(0,10)};saveR(r);render();}
 function getCache(){try{const ct=localStorage.getItem(CTK);if(!ct)return null;if(Date.now()-parseInt(ct)>MAX_AGE)return null;const d=localStorage.getItem(CK);return d?JSON.parse(d):null;}catch(e){return null;}}
 function setCache(data){try{localStorage.setItem(CK,JSON.stringify(data));localStorage.setItem(CTK,Date.now().toString());}catch(e){console.warn('Cache save failed');}}
-function clearCache(){localStorage.removeItem(CK);localStorage.removeItem(CTK);alert('캐시가 삭제되었습니다. 새로고침하면 다시 로딩합니다.');location.reload();}
-function clearRead(){localStorage.removeItem(RK);alert('읽기 기록이 초기화되었습니다.');render();}
+function clearCache(){localStorage.removeItem(CK);localStorage.removeItem(CTK);alert('ìºìê° ì­ì ëììµëë¤. ìë¡ê³ ì¹¨íë©´ ë¤ì ë¡ë©í©ëë¤.');location.reload();}
+function clearRead(){localStorage.removeItem(RK);alert('ì½ê¸° ê¸°ë¡ì´ ì´ê¸°íëììµëë¤.');render();}
 function catArt(a){const t=(a.t||'').toLowerCase();a.cats=[];a.subs=[];for(const[cn,cd]of Object.entries(CATS)){for(const kw of cd.kw){if(t.includes(kw)){a.cats.push(cn);break;}}if(a.cats.includes(cn)){for(const[sn,skw]of Object.entries(cd.sub||{})){for(const k of skw){if(t.includes(k)){a.subs.push(sn);break;}}}}}if(!a.cats.length)a.cats.push('Basic Science & General');}
 const API='https://musculoskeletalkey.com/wp-json/wp/v2/posts?categories=27&per_page=100&page=PAGE&_fields=id,title,link';
 const PX=[u=>u,u=>'https://corsproxy.io/?'+encodeURIComponent(u),u=>'https://api.allorigins.win/raw?url='+encodeURIComponent(u)];
 async function fx(page){const url=API.replace('PAGE',page);for(let i=0;i<PX.length;i++){try{const r=await fetch(PX[i](url),{headers:{Accept:'application/json'}});if(r.ok){const d=await r.json();return d;}}catch(e){}}return[];}
 async function fetchAll(){const bar=document.getElementById('topBar');const cached=getCache();if(cached&&cached.length>0){arts=cached;arts.forEach(a=>catArt(a));bar.style.width='100%';setTimeout(()=>bar.style.opacity='0',500);updateStats();render();bgRefresh();return;}let loaded=0;const total=125;const batch=10;for(let s=1;s<=total;s+=batch){const proms=[];for(let p=s;p<s+batch&&p<=total;p++){proms.push(fx(p).then(d=>{if(Array.isArray(d)){const mapped=d.map(x=>({i:x.id,t:x.title?.rendered||'',l:x.link}));arts.push(...mapped);loaded++;}else loaded++;}).catch(()=>loaded++));}await Promise.all(proms);bar.style.width=Math.min((loaded/total)*100,100)+'%';if(loaded%20<batch){arts.forEach(a=>{if(!a.cats)catArt(a);});updateStats();render();}}arts.forEach(a=>{if(!a.cats)catArt(a);});setCache(arts);bar.style.width='100%';setTimeout(()=>bar.style.opacity='0',500);updateStats();render();}
 async function bgRefresh(){setTimeout(async()=>{try{let fresh=[];let p=1;while(p<=125){const d=await fx(p);if(!Array.isArray(d)||!d.length)break;fresh.push(...d.map(x=>({i:x.id,t:x.title?.rendered||'',l:x.link})));p++;}if(fresh.length>arts.length*0.8){arts=fresh;arts.forEach(a=>catArt(a));setCache(arts);updateStats();render();}}catch(e){}},30000);}
-function updateStats(){const r=getR();document.getElementById('stTotal').textContent=arts.length.toLocaleString();document.getElementById('stRead').textContent=Object.keys(r).length.toLocaleString();const ci=document.getElementById('cacheInfo');const ct=localStorage.getItem(CTK);if(ct)ci.textContent='캐시: '+arts.length.toLocaleString()+'개 문헌 ('+new Date(parseInt(ct)).toLocaleString()+')';}
+function updateStats(){const r=getR();document.getElementById('stTotal').textContent=arts.length.toLocaleString();document.getElementById('stRead').textContent=Object.keys(r).length.toLocaleString();const ci=document.getElementById('cacheInfo');const ct=localStorage.getItem(CTK);if(ct)ci.textContent='ìºì: '+arts.length.toLocaleString()+'ê° ë¬¸í ('+new Date(parseInt(ct)).toLocaleString()+')';}
 function render(){if(curView==='cat'&&!curCat)renderCats();else if(curView==='cat'&&curCat)renderCatArt();else if(curView==='all')renderAll();else if(curView==='read')renderRead();}
-function renderCats(){const v=document.getElementById('vCat');const r=getR();let h='<div class="cgrid">';for(const[cn,cd]of Object.entries(CATS)){const ca=arts.filter(a=>a.cats&&a.cats.includes(cn));const readCt=ca.filter(a=>r[a.i]).length;const pct=ca.length?(readCt/ca.length*100).toFixed(1):0;const subs=Object.keys(cd.sub||{});h+='<div class="ccard" onclick="openCat(\''+cn+'\')"><div class="nm">'+cn+'</div><div class="ct">'+ca.length.toLocaleString()+' 문헌 · '+readCt+' 읽음</div><div class="cprog"><div class="fill" style="width:'+pct+'%"></div></div><div class="rd">'+pct+'% 완료</div>'+(subs.length?'<div class="subtags">'+subs.slice(0,4).map(s=>'<span class="subtag">'+s+'</span>').join('')+(subs.length>4?'<span class="subtag">+'+String(subs.length-4)+'</span>':'')+'</div>':'')+'</div>';}h+='</div>';v.innerHTML=h;}
+function renderCats(){const v=document.getElementById('vCat');const r=getR();let h='<div class="cgrid">';for(const[cn,cd]of Object.entries(CATS)){const ca=arts.filter(a=>a.cats&&a.cats.includes(cn));const readCt=ca.filter(a=>r[a.i]).length;const pct=ca.length?(readCt/ca.length*100).toFixed(1):0;const subs=Object.keys(cd.sub||{});h+='<div class="ccard" onclick="openCat(\''+cn+'\')"><div class="nm">'+cn+'</div><div class="ct">'+ca.length.toLocaleString()+' ë¬¸í Â· '+readCt+' ì½ì</div><div class="cprog"><div class="fill" style="width:'+pct+'%"></div></div><div class="rd">'+pct+'% ìë£</div>'+(subs.length?'<div class="subtags">'+subs.slice(0,4).map(s=>'<span class="subtag">'+s+'</span>').join('')+(subs.length>4?'<span class="subtag">+'+String(subs.length-4)+'</span>':'')+'</div>':'')+'</div>';}h+='</div>';v.innerHTML=h;}
 function openCat(cn){curCat=cn;curSub=null;pg=1;renderCatArt();}
-function renderCatArt(){const v=document.getElementById('vCat');const cd=CATS[curCat];const ca=arts.filter(a=>a.cats&&a.cats.includes(curCat));const subs=Object.keys(cd.sub||{});let filtered=curSub?ca.filter(a=>a.subs&&a.subs.includes(curSub)):ca;if(curFilter==='read')filtered=filtered.filter(a=>isR(a.i));else if(curFilter==='unread')filtered=filtered.filter(a=>!isR(a.i));const q=document.getElementById('searchInput').value.toLowerCase();if(q)filtered=filtered.filter(a=>(a.t||'').toLowerCase().includes(q));let h='<div class="bread"><a onclick="backToCats()">카테고리</a> <span>›</span> <span>'+curCat+'</span>'+(curSub?' <span>›</span> <span>'+curSub+'</span>':'')+'</div>';h+='<div class="filters"><button class="fbtn '+(curFilter==='all'?'on':'')+'" onclick="setFilter(\'all\')">전체 ('+ca.length+')</button><button class="fbtn '+(curFilter==='read'?'on':'')+'" onclick="setFilter(\'read\')">읽음</button><button class="fbtn '+(curFilter==='unread'?'on':'')+'" onclick="setFilter(\'unread\')">안읽음</button></div>';if(subs.length){h+='<div class="subtags" style="margin-bottom:1.5rem"><span class="subtag '+(!curSub?'on':'')+'" onclick="setSub(null)">전체</span>';subs.forEach(s=>{const sc=ca.filter(a=>a.subs&&a.subs.includes(s)).length;h+='<span class="subtag '+(curSub===s?'on':'')+'" onclick="setSub(\''+s+'\')">'+s+' ('+sc+')</span>';});h+='</div>';}const totalPg=Math.ceil(filtered.length/PER)||1;const start=(pg-1)*PER,end=start+PER;const page=filtered.slice(start,end);h+='<div class="alist">';if(!page.length)h+='<div class="empty" style="grid-column:1/-1"><div class="icon">📚</div><div class="msg">문헌이 없습니다</div></div>';else page.forEach(a=>h+=mkCard(a));h+='</div>';h+='<div class="pagi"><button class="pbtn" onclick="chgPg(-1)" '+(pg<=1?'disabled':'')+'>이전</button><span class="pinfo">'+pg+' / '+totalPg+' ('+filtered.length+'개)</span><button class="pbtn" onclick="chgPg(1)" '+(pg>=totalPg?'disabled':'')+'>다음</button></div>';v.innerHTML=h;document.getElementById('stDisp').textContent=filtered.length.toLocaleString();}
-function renderAll(){const v=document.getElementById('vAll');let filtered=[...arts];if(curFilter==='read')filtered=filtered.filter(a=>isR(a.i));else if(curFilter==='unread')filtered=filtered.filter(a=>!isR(a.i));const q=document.getElementById('searchInput').value.toLowerCase();if(q)filtered=filtered.filter(a=>(a.t||'').toLowerCase().includes(q));const totalPg=Math.ceil(filtered.length/PER)||1;const start=(pg-1)*PER,end=start+PER;const page=filtered.slice(start,end);let h='<div class="filters"><button class="fbtn '+(curFilter==='all'?'on':'')+'" onclick="setFilter(\'all\')">전체 ('+arts.length+')</button><button class="fbtn '+(curFilter==='read'?'on':'')+'" onclick="setFilter(\'read\')">읽음</button><button class="fbtn '+(curFilter==='unread'?'on':'')+'" onclick="setFilter(\'unread\')">안읽음</button></div>';h+='<div class="alist">';if(!page.length)h+='<div class="empty" style="grid-column:1/-1"><div class="icon">📚</div><div class="msg">문헌이 없습니다</div></div>';else page.forEach(a=>h+=mkCard(a));h+='</div>';h+='<div class="pagi"><button class="pbtn" onclick="chgPg(-1)" '+(pg<=1?'disabled':'')+'>이전</button><span class="pinfo">'+pg+' / '+totalPg+' ('+filtered.length+'개)</span><button class="pbtn" onclick="chgPg(1)" '+(pg>=totalPg?'disabled':'')+'>다음</button></div>';v.innerHTML=h;document.getElementById('stDisp').textContent=filtered.length.toLocaleString();}
-function renderRead(){const v=document.getElementById('vRead');const r=getR();let readArts=arts.filter(a=>r[a.i]);readArts.sort((a,b)=>(r[b.i].lr||'').localeCompare(r[a.i].lr||''));const q=document.getElementById('searchInput').value.toLowerCase();if(q)readArts=readArts.filter(a=>(a.t||'').toLowerCase().includes(q));const totalPg=Math.ceil(readArts.length/PER)||1;const start=(pg-1)*PER,end=start+PER;const page=readArts.slice(start,end);let h='<p style="color:var(--tx2);margin-bottom:1rem">총 '+readArts.length+'개 읽음</p><div class="alist">';if(!page.length)h+='<div class="empty" style="grid-column:1/-1"><div class="icon">📖</div><div class="msg">아직 읽은 문헌이 없습니다</div></div>';else page.forEach(a=>h+=mkCard(a));h+='</div><div class="pagi"><button class="pbtn" onclick="chgPg(-1)" '+(pg<=1?'disabled':'')+'>이전</button><span class="pinfo">'+pg+' / '+totalPg+'</span><button class="pbtn" onclick="chgPg(1)" '+(pg>=totalPg?'disabled':'')+'>다음</button></div>';v.innerHTML=h;document.getElementById('stDisp').textContent=readArts.length.toLocaleString();}
-function mkCard(a){const ri=getRInfo(a.i);const read=!!ri;return '<div class="acard'+(read?' read':'')+'"><div class="tt">'+a.t+'</div><div class="meta">'+(a.cats||[]).map(c=>'<span class="cat">'+c+'</span>').join('')+'</div>'+(ri?'<div class="rinfo">📖 '+ri.c+'회 읽음 · 최근 '+ri.lr+'</div>':'')+'<div class="abtn"><a href="'+a.l+'" target="_blank" class="alink" onclick="markR('+a.i+')">읽기 →</a><button class="rbtn'+(read?' done':'')+'" onclick="togR('+a.i+')">'+(read?'✓ 읽음':'읽음 표시')+'</button></div></div>';}
+function renderCatArt(){const v=document.getElementById('vCat');const cd=CATS[curCat];const ca=arts.filter(a=>a.cats&&a.cats.includes(curCat));const subs=Object.keys(cd.sub||{});let filtered=curSub?ca.filter(a=>a.subs&&a.subs.includes(curSub)):ca;if(curFilter==='read')filtered=filtered.filter(a=>isR(a.i));else if(curFilter==='unread')filtered=filtered.filter(a=>!isR(a.i));const q=document.getElementById('searchInput').value.toLowerCase();if(q)filtered=filtered.filter(a=>(a.t||'').toLowerCase().includes(q));let h='<div class="bread"><a onclick="backToCats()">ì¹´íê³ ë¦¬</a> <span>âº</span> <span>'+curCat+'</span>'+(curSub?' <span>âº</span> <span>'+curSub+'</span>':'')+'</div>';h+='<div class="filters"><button class="fbtn '+(curFilter==='all'?'on':'')+'" onclick="setFilter(\'all\')">ì ì²´ ('+ca.length+')</button><button class="fbtn '+(curFilter==='read'?'on':'')+'" onclick="setFilter(\'read\')">ì½ì</button><button class="fbtn '+(curFilter==='unread'?'on':'')+'" onclick="setFilter(\'unread\')">ìì½ì</button></div>';if(subs.length){h+='<div class="subtags" style="margin-bottom:1.5rem"><span class="subtag '+(!curSub?'on':'')+'" onclick="setSub(null)">ì ì²´</span>';subs.forEach(s=>{const sc=ca.filter(a=>a.subs&&a.subs.includes(s)).length;h+='<span class="subtag '+(curSub===s?'on':'')+'" onclick="setSub(\''+s+'\')">'+s+' ('+sc+')</span>';});h+='</div>';}const totalPg=Math.ceil(filtered.length/PER)||1;const start=(pg-1)*PER,end=start+PER;const page=filtered.slice(start,end);h+='<div class="alist">';if(!page.length)h+='<div class="empty" style="grid-column:1/-1"><div class="icon">ð</div><div class="msg">ë¬¸íì´ ììµëë¤</div></div>';else page.forEach(a=>h+=mkCard(a));h+='</div>';h+='<div class="pagi"><button class="pbtn" onclick="chgPg(-1)" '+(pg<=1?'disabled':'')+'>ì´ì </button><span class="pinfo">'+pg+' / '+totalPg+' ('+filtered.length+'ê°)</span><button class="pbtn" onclick="chgPg(1)" '+(pg>=totalPg?'disabled':'')+'>ë¤ì</button></div>';v.innerHTML=h;document.getElementById('stDisp').textContent=filtered.length.toLocaleString();}
+function renderAll(){const v=document.getElementById('vAll');let filtered=[...arts];if(curFilter==='read')filtered=filtered.filter(a=>isR(a.i));else if(curFilter==='unread')filtered=filtered.filter(a=>!isR(a.i));const q=document.getElementById('searchInput').value.toLowerCase();if(q)filtered=filtered.filter(a=>(a.t||'').toLowerCase().includes(q));const totalPg=Math.ceil(filtered.length/PER)||1;const start=(pg-1)*PER,end=start+PER;const page=filtered.slice(start,end);let h='<div class="filters"><button class="fbtn '+(curFilter==='all'?'on':'')+'" onclick="setFilter(\'all\')">ì ì²´ ('+arts.length+')</button><button class="fbtn '+(curFilter==='read'?'on':'')+'" onclick="setFilter(\'read\')">ì½ì</button><button class="fbtn '+(curFilter==='unread'?'on':'')+'" onclick="setFilter(\'unread\')">ìì½ì</button></div>';h+='<div class="alist">';if(!page.length)h+='<div class="empty" style="grid-column:1/-1"><div class="icon">ð</div><div class="msg">ë¬¸íì´ ììµëë¤</div></div>';else page.forEach(a=>h+=mkCard(a));h+='</div>';h+='<div class="pagi"><button class="pbtn" onclick="chgPg(-1)" '+(pg<=1?'disabled':'')+'>ì´ì </button><span class="pinfo">'+pg+' / '+totalPg+' ('+filtered.length+'ê°)</span><button class="pbtn" onclick="chgPg(1)" '+(pg>=totalPg?'disabled':'')+'>ë¤ì</button></div>';v.innerHTML=h;document.getElementById('stDisp').textContent=filtered.length.toLocaleString();}
+function renderRead(){const v=document.getElementById('vRead');const r=getR();let readArts=arts.filter(a=>r[a.i]);readArts.sort((a,b)=>(r[b.i].lr||'').localeCompare(r[a.i].lr||''));const q=document.getElementById('searchInput').value.toLowerCase();if(q)readArts=readArts.filter(a=>(a.t||'').toLowerCase().includes(q));const totalPg=Math.ceil(readArts.length/PER)||1;const start=(pg-1)*PER,end=start+PER;const page=readArts.slice(start,end);let h='<p style="color:var(--tx2);margin-bottom:1rem">ì´ '+readArts.length+'ê° ì½ì</p><div class="alist">';if(!page.length)h+='<div class="empty" style="grid-column:1/-1"><div class="icon">ð</div><div class="msg">ìì§ ì½ì ë¬¸íì´ ììµëë¤</div></div>';else page.forEach(a=>h+=mkCard(a));h+='</div><div class="pagi"><button class="pbtn" onclick="chgPg(-1)" '+(pg<=1?'disabled':'')+'>ì´ì </button><span class="pinfo">'+pg+' / '+totalPg+'</span><button class="pbtn" onclick="chgPg(1)" '+(pg>=totalPg?'disabled':'')+'>ë¤ì</button></div>';v.innerHTML=h;document.getElementById('stDisp').textContent=readArts.length.toLocaleString();}
+function mkCard(a){const ri=getRInfo(a.i);const read=!!ri;return '<div class="acard'+(read?' read':'')+'"><div class="tt">'+a.t+'</div><div class="meta">'+(a.cats||[]).map(c=>'<span class="cat">'+c+'</span>').join('')+'</div>'+(ri?'<div class="rinfo">ð '+ri.c+'í ì½ì Â· ìµê·¼ '+ri.lr+'</div>':'')+'<div class="abtn"><a href="'+a.l+'" target="_blank" class="alink" onclick="markR('+a.i+')">ì½ê¸° â</a><button class="rbtn'+(read?' done':'')+'" onclick="togR('+a.i+')">'+(read?'â ì½ì':'ì½ì íì')+'</button></div></div>';}
 function backToCats(){curCat=null;curSub=null;curFilter='all';pg=1;render();}
 function setSub(s){curSub=s;pg=1;render();}
 function setFilter(f){curFilter=f;pg=1;render();}
@@ -171,5 +211,6 @@ document.querySelectorAll('.tab').forEach(t=>{t.addEventListener('click',()=>{do
 let searchTimer;document.getElementById('searchInput').addEventListener('input',()=>{clearTimeout(searchTimer);searchTimer=setTimeout(()=>{pg=1;render();},300);});
 fetchAll();
 </script>
+</div><!-- end mainContent -->
 </body>
 </html>
