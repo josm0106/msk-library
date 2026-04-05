@@ -227,21 +227,68 @@ document.querySelectorAll('.tab').forEach(t=>{t.addEventListener('click',()=>{do
 let searchTimer,acIdx=-1;
 const sInput=document.getElementById('searchInput');
 const acDrop=document.getElementById('acDrop');
+const ABBR={
+'rc':'rotator cuff','rct':'rotator cuff tear','rca':'rotator cuff arthropathy',
+'acl':'anterior cruciate ligament','pcl':'posterior cruciate ligament',
+'mcl':'medial collateral ligament','lcl':'lateral collateral ligament',
+'tka':'total knee arthroplasty','tha':'total hip arthroplasty','tsa':'total shoulder arthroplasty',
+'rtsa':'reverse total shoulder arthroplasty','rsa':'reverse shoulder arthroplasty',
+'orif':'open reduction internal fixation','crif':'closed reduction internal fixation',
+'fnf':'femoral neck fracture','fn':'femoral neck',
+'ocd':'osteochondritis dissecans','avs':'avascular necrosis','avn':'avascular necrosis',
+'ddh':'developmental dysplasia hip','fai':'femoroacetabular impingement',
+'slap':'superior labrum anterior posterior','mpfl':'medial patellofemoral ligament',
+'tfcc':'triangular fibrocartilage complex','druj':'distal radioulnar joint',
+'crps':'complex regional pain syndrome','plc':'posterolateral corner',
+'hto':'high tibial osteotomy','uka':'unicompartmental knee arthroplasty',
+'pji':'periprosthetic joint infection','dvt':'deep vein thrombosis',
+'cts':'carpal tunnel syndrome','ctr':'carpal tunnel release',
+'fx':'fracture','dx':'diagnosis','tx':'treatment','sx':'surgery',
+'prp':'platelet rich plasma','bma':'bone marrow aspirate',
+'im':'intramedullary','imn':'intramedullary nail',
+'dhs':'dynamic hip screw','pfn':'proximal femoral nail',
+'liss':'less invasive stabilization system'
+};
+function expandQuery(q){
+const ql=q.toLowerCase().trim();
+const words=ql.split(/\s+/);
+let expanded=[];
+words.forEach(w=>{
+if(ABBR[w])expanded.push(...ABBR[w].split(' '));
+else expanded.push(w);
+});
+return{original:words,expanded:expanded,expandedStr:expanded.join(' ')};
+}
 function highlightMatch(text,query){
 if(!query)return text;
-const esc=query.replace(/[.*+?^${}()|[\]\\]/g,'\\$&');
-return text.replace(new RegExp('('+esc+')','gi'),'<mark>$1</mark>');
+const eq=expandQuery(query);
+const allWords=[...new Set([...eq.original,...eq.expanded])];
+let result=text;
+allWords.forEach(w=>{
+const esc=w.replace(/[.*+?^${}()|[\]\\]/g,'\\$&');
+result=result.replace(new RegExp('('+esc+')','gi'),'<mark>$1</mark>');
+});
+return result;
 }
 function showAC(q){
-if(!q||q.length<2||!arts.length){acDrop.classList.remove('show');acDrop.innerHTML='';acIdx=-1;return;}
-const ql=q.toLowerCase();
-const words=ql.split(/\s+/).filter(w=>w.length>0);
+if(!q||q.length<1||!arts.length){acDrop.classList.remove('show');acDrop.innerHTML='';acIdx=-1;return;}
+const eq=expandQuery(q);
+const ql=eq.expandedStr.toLowerCase();
+const words=eq.expanded;
+const origWords=eq.original;
 let scored=arts.map(a=>{
 const tl=(a.t||'').toLowerCase();
 let score=0;
-if(tl.includes(ql))score+=100;
-words.forEach(w=>{if(tl.includes(w))score+=10;});
-words.forEach(w=>{if(tl.split(/[\s\-:,()]+/).some(tw=>tw.startsWith(w)))score+=5;});
+if(tl.includes(ql))score+=200;
+origWords.forEach(w=>{if(tl.includes(w))score+=50;});
+let matchCount=0;
+words.forEach(w=>{if(tl.includes(w)){score+=15;matchCount++;}});
+if(matchCount===words.length)score+=100;
+words.forEach(w=>{if(tl.split(/[\s\-:,()]+/).some(tw=>tw.startsWith(w)))score+=8;});
+if(matchCount===0)score=0;
+const allOrigMatch=origWords.every(w=>tl.includes(w));
+const allExpandMatch=words.every(w=>tl.includes(w));
+if(!allOrigMatch&&!allExpandMatch)score=0;
 return{a:a,score:score};
 }).filter(x=>x.score>0).sort((a,b)=>b.score-a.score);
 if(!scored.length){
@@ -292,14 +339,22 @@ pg=1;render();
 },200);
 });
 sInput.addEventListener('keydown',e=>{
+if(e.key==='Enter'){
+e.preventDefault();
+if(acDrop.classList.contains('show')&&acIdx>=0){
+const sel=acDrop.querySelectorAll('.ac-item')[acIdx];
+if(sel){markR(parseInt(sel.dataset.id));window.open(sel.dataset.link,'_blank');}
+}else{
+const tabs=document.querySelectorAll('.tab');
+tabs.forEach(t=>{if(t.dataset.v==='all')t.click();});
+}
+acDrop.classList.remove('show');acIdx=-1;
+return;
+}
 if(!acDrop.classList.contains('show'))return;
 if(e.key==='ArrowDown'){e.preventDefault();acNav(1);}
 else if(e.key==='ArrowUp'){e.preventDefault();acNav(-1);}
-else if(e.key==='Enter'&&acIdx>=0){
-e.preventDefault();
-const sel=acDrop.querySelectorAll('.ac-item')[acIdx];
-if(sel){markR(parseInt(sel.dataset.id));window.open(sel.dataset.link,'_blank');acDrop.classList.remove('show');}
-}else if(e.key==='Escape'){acDrop.classList.remove('show');}
+else if(e.key==='Escape'){acDrop.classList.remove('show');}
 });
 document.addEventListener('click',e=>{if(!e.target.closest('.search'))acDrop.classList.remove('show');});
 fetchAll();
