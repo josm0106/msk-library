@@ -253,11 +253,12 @@ function expandQuery(q){
 const ql=q.toLowerCase().trim();
 const words=ql.split(/\s+/);
 let expanded=[];
+let wasExpanded=[];
 words.forEach(w=>{
-if(ABBR[w])expanded.push(...ABBR[w].split(' '));
+if(ABBR[w]){expanded.push(...ABBR[w].split(' '));wasExpanded.push(w);}
 else expanded.push(w);
 });
-return{original:words,expanded:expanded,expandedStr:expanded.join(' ')};
+return{original:words,expanded:expanded,expandedStr:expanded.join(' '),wasExpanded:wasExpanded};
 }
 function highlightMatch(text,query){
 if(!query)return text;
@@ -276,19 +277,25 @@ const eq=expandQuery(q);
 const ql=eq.expandedStr.toLowerCase();
 const words=eq.expanded;
 const origWords=eq.original;
+const wasExp=new Set(eq.wasExpanded);
+const safeOrig=origWords.filter(w=>!wasExp.has(w));
 let scored=arts.map(a=>{
 const tl=(a.t||'').toLowerCase();
+const tw=tl.split(/[\s\-:,();\/\[\]]+/);
 let score=0;
 if(tl.includes(ql))score+=200;
-origWords.forEach(w=>{if(tl.includes(w))score+=50;});
-let matchCount=0;
-words.forEach(w=>{if(tl.includes(w)){score+=15;matchCount++;}});
-if(matchCount===words.length)score+=100;
-words.forEach(w=>{if(tl.split(/[\s\-:,()]+/).some(tw=>tw.startsWith(w)))score+=8;});
-if(matchCount===0)score=0;
-const allOrigMatch=origWords.every(w=>tl.includes(w));
-const allExpandMatch=words.every(w=>tl.includes(w));
-if(!allOrigMatch&&!allExpandMatch)score=0;
+let expMatch=0;
+words.forEach(w=>{
+if(w.length<=2){if(tw.some(t=>t===w||t.startsWith(w+'_'))){score+=15;expMatch++;}}
+else{if(tl.includes(w)){score+=15;expMatch++;}}
+});
+if(expMatch===words.length)score+=100;
+safeOrig.forEach(w=>{
+if(w.length<=2){if(tw.some(t=>t===w))score+=50;}
+else{if(tl.includes(w))score+=50;}
+});
+words.forEach(w=>{if(tw.some(t=>t.startsWith(w)&&t.length<w.length+4))score+=8;});
+if(expMatch<words.length)score=0;
 return{a:a,score:score};
 }).filter(x=>x.score>0).sort((a,b)=>b.score-a.score);
 if(!scored.length){
