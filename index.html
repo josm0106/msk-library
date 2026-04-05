@@ -125,13 +125,13 @@ async function checkLogin(){
 const pw=document.getElementById('loginPw').value;
 const hash=await sha256(pw);
 if(hash===PW_HASH){
-sessionStorage.setItem('msk_auth','1');
+localStorage.setItem('msk_auth','1');
 document.getElementById('loginScreen').classList.add('hidden');
 document.getElementById('mainContent').classList.add('show');
 }else{document.getElementById('loginErr').textContent='비밀번호가 틀렸습니다.';}
 }
 document.getElementById('loginPw').addEventListener('keydown',e=>{if(e.key==='Enter')checkLogin();});
-if(sessionStorage.getItem('msk_auth')==='1'){document.getElementById('loginScreen').classList.add('hidden');document.addEventListener('DOMContentLoaded',()=>{document.getElementById('mainContent').classList.add('show');});}
+if(localStorage.getItem('msk_auth')==='1'){document.getElementById('loginScreen').classList.add('hidden');document.addEventListener('DOMContentLoaded',()=>{document.getElementById('mainContent').classList.add('show');});}
 </script>
 <div id="mainContent">
 <div id="topBar"></div>
