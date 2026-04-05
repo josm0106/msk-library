@@ -11,7 +11,7 @@ const https = require('https');
 const BASE = 'https://musculoskeletalkey.com/wp-json/wp/v2/posts';
 const CATEGORY = 27;
 const PER_PAGE = 100;
-const FIELDS = 'id,title,link';
+const FIELDS = 'id,title,link,date';
 
 function fetchPage(page) {
   const url = `${BASE}?categories=${CATEGORY}&per_page=${PER_PAGE}&page=${page}&_fields=${FIELDS}`;
@@ -58,7 +58,8 @@ async function fetchAll() {
         const mapped = batch.map(a => ({
           i: a.id,
           t: a.title?.rendered || '',
-          l: a.link
+          l: a.link,
+          d: a.date ? a.date.slice(0, 10) : ''
         }));
         allArticles.push(...mapped);
         console.log(`Page ${page}: +${batch.length} articles (total: ${allArticles.length})`);
