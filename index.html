@@ -16,9 +16,21 @@ header{background:rgba(37,37,37,.95);border-bottom:1px solid var(--bdr);padding:
 .hdr{max-width:1400px;margin:0 auto;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:1rem}
 .hdr h1{font-size:1.6rem;font-weight:700;background:linear-gradient(135deg,var(--ac),#00f5ff);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
 .hdr small{display:block;font-size:.8rem;color:var(--tx2);-webkit-text-fill-color:var(--tx2)}
-.search{flex:1;min-width:200px;max-width:380px}
+.search{flex:1;min-width:200px;max-width:380px;position:relative}
 .search input{width:100%;padding:.65rem 1rem;background:var(--bg3);border:1px solid var(--bdr);border-radius:8px;color:var(--tx);font-size:.95rem;transition:border-color .3s}
 .search input:focus{outline:none;border-color:var(--ac);box-shadow:0 0 8px rgba(0,212,255,.2)}
+.ac-drop{position:absolute;top:100%;left:0;right:0;background:var(--card);border:1px solid var(--bdr);border-top:none;border-radius:0 0 10px 10px;max-height:400px;overflow-y:auto;z-index:200;display:none;box-shadow:0 8px 24px rgba(0,0,0,.4)}
+.ac-drop.show{display:block}
+.ac-item{padding:.75rem 1rem;cursor:pointer;border-bottom:1px solid var(--bg3);transition:background .2s}
+.ac-item:last-child{border-bottom:none}
+.ac-item:hover,.ac-item.sel{background:var(--bg3)}
+.ac-item .ac-title{font-size:.9rem;color:var(--tx);margin-bottom:.25rem;line-height:1.3}
+.ac-item .ac-title mark{background:transparent;color:var(--ac);font-weight:700}
+.ac-item .ac-meta{display:flex;gap:.5rem;flex-wrap:wrap}
+.ac-item .ac-cat{font-size:.7rem;padding:.15rem .4rem;background:var(--bg);border:1px solid var(--bdr);border-radius:3px;color:var(--ac)}
+.ac-item .ac-sub{font-size:.7rem;color:var(--tx2)}
+.ac-count{padding:.5rem 1rem;font-size:.75rem;color:var(--tx2);background:var(--bg3);border-top:1px solid var(--bdr);text-align:center}
+.ac-empty{padding:1rem;text-align:center;font-size:.85rem;color:var(--tx2)}
 .stats{display:flex;gap:1.5rem;font-size:.85rem;color:var(--tx2);flex-wrap:wrap}
 .stat span{display:block}.stat .v{font-size:1.2rem;font-weight:700;color:var(--ac)}
 .wrap{max-width:1400px;margin:0 auto;padding:1.5rem}
@@ -93,7 +105,8 @@ header{background:rgba(37,37,37,.95);border-bottom:1px solid var(--bdr);padding:
 <small>MSK Orthopedic Library</small>
 </div>
 <div class="search">
-<input type="text" id="searchInput" placeholder="검색... (Search)">
+<input type="text" id="searchInput" placeholder="검색... (Search)" autocomplete="off">
+<div class="ac-drop" id="acDrop"></div>
 </div>
 <div class="stats">
 <div class="stat"><span class="l">전체</span><span class="v" id="stTotal">0</span></div>
@@ -164,9 +177,9 @@ function updateStats(){const r=getR();document.getElementById('stTotal').textCon
 function render(){if(curView==='cat'&&!curCat)renderCats();else if(curView==='cat'&&curCat)renderCatArt();else if(curView==='all')renderAll();else if(curView==='read')renderRead();}
 function renderCats(){const v=document.getElementById('vCat');const r=getR();let h='<div class="cgrid">';for(const[cn,cd]of Object.entries(CATS)){const ca=arts.filter(a=>a.cats&&a.cats.includes(cn));const readCt=ca.filter(a=>r[a.i]).length;const pct=ca.length?(readCt/ca.length*100).toFixed(1):0;const subs=Object.keys(cd.sub||{});h+='<div class="ccard" onclick="openCat(\''+cn+'\')"><div class="nm">'+cn+'</div><div class="ct">'+ca.length.toLocaleString()+' 문헌 · '+readCt+' 읽음</div><div class="cprog"><div class="fill" style="width:'+pct+'%"></div></div><div class="rd">'+pct+'% 완료</div>'+(subs.length?'<div class="subtags">'+subs.slice(0,4).map(s=>'<span class="subtag">'+s+'</span>').join('')+(subs.length>4?'<span class="subtag">+'+String(subs.length-4)+'</span>':'')+'</div>':'')+'</div>';}h+='</div>';v.innerHTML=h;}
 function openCat(cn){curCat=cn;curSub=null;pg=1;renderCatArt();}
-function renderCatArt(){const v=document.getElementById('vCat');const cd=CATS[curCat];const ca=arts.filter(a=>a.cats&&a.cats.includes(curCat));const subs=Object.keys(cd.sub||{});let filtered=curSub?ca.filter(a=>a.subs&&a.subs.includes(curSub)):ca;if(curFilter==='read')filtered=filtered.filter(a=>isR(a.i));else if(curFilter==='unread')filtered=filtered.filter(a=>!isR(a.i));const q=expandQ(document.getElementById('searchInput').value);if(q)filtered=filtered.filter(a=>matchQ(a.t||'',q));let h='<div class="bread"><a onclick="backToCats()">카테고리</a> <span>›</span> <span>'+curCat+'</span>'+(curSub?' <span>›</span> <span>'+curSub+'</span>':'')+'</div>';h+='<div class="filters"><button class="fbtn '+(curFilter==='all'?'on':'')+'" onclick="setFilter(\'all\')">전체 ('+ca.length+')</button><button class="fbtn '+(curFilter==='read'?'on':'')+'" onclick="setFilter(\'read\')">읽음</button><button class="fbtn '+(curFilter==='unread'?'on':'')+'" onclick="setFilter(\'unread\')">안읽음</button></div>';if(subs.length){h+='<div class="subtags" style="margin-bottom:1.5rem"><span class="subtag '+(!curSub?'on':'')+'" onclick="setSub(null)">전체</span>';subs.forEach(s=>{const sc=ca.filter(a=>a.subs&&a.subs.includes(s)).length;h+='<span class="subtag '+(curSub===s?'on':'')+'" onclick="setSub(\''+s+'\')">'+s+' ('+sc+')</span>';});h+='</div>';}const totalPg=Math.ceil(filtered.length/PER)||1;const start=(pg-1)*PER,end=start+PER;const page=filtered.slice(start,end);h+='<div class="alist">';if(!page.length)h+='<div class="empty" style="grid-column:1/-1"><div class="icon">📚</div><div class="msg">문헌이 없습니다</div></div>';else page.forEach(a=>h+=mkCard(a));h+='</div>';h+='<div class="pagi"><button class="pbtn" onclick="chgPg(-1)" '+(pg<=1?'disabled':'')+'>이전</button><span class="pinfo">'+pg+' / '+totalPg+' ('+filtered.length+'개)</span><button class="pbtn" onclick="chgPg(1)" '+(pg>=totalPg?'disabled':'')+'>다음</button></div>';v.innerHTML=h;document.getElementById('stDisp').textContent=filtered.length.toLocaleString();}
-function renderAll(){const v=document.getElementById('vAll');let filtered=[...arts];if(curFilter==='read')filtered=filtered.filter(a=>isR(a.i));else if(curFilter==='unread')filtered=filtered.filter(a=>!isR(a.i));const q=expandQ(document.getElementById('searchInput').value);if(q)filtered=filtered.filter(a=>matchQ(a.t||'',q));let extraH='';if(q&&apiResults.length>0){extraH='<div style="margin:1rem 0;padding:.8rem 1rem;background:var(--bg3);border:1px solid var(--ac);border-radius:8px;color:var(--ac);font-size:.85rem">🔍 본문 검색으로 '+apiResults.length+'개 추가 결과 발견</div><div class="alist">';apiResults.forEach(a=>extraH+=mkCard(a));extraH+='</div>';}if(q&&apiSearching){extraH='<div style="margin:1rem 0;padding:.8rem 1rem;background:var(--bg3);border-radius:8px;color:var(--tx2);font-size:.85rem">🔄 본문 검색 중...</div>';}const totalPg=Math.ceil(filtered.length/PER)||1;const start=(pg-1)*PER,end=start+PER;const page=filtered.slice(start,end);let h='<div class="filters"><button class="fbtn '+(curFilter==='all'?'on':'')+'" onclick="setFilter(\'all\')">전체 ('+arts.length+')</button><button class="fbtn '+(curFilter==='read'?'on':'')+'" onclick="setFilter(\'read\')">읽음</button><button class="fbtn '+(curFilter==='unread'?'on':'')+'" onclick="setFilter(\'unread\')">안읽음</button></div>';h+='<div class="alist">';if(!page.length&&!apiResults.length)h+='<div class="empty" style="grid-column:1/-1"><div class="icon">📚</div><div class="msg">문헌이 없습니다</div></div>';else page.forEach(a=>h+=mkCard(a));h+='</div>';h+=extraH;h+='<div class="pagi"><button class="pbtn" onclick="chgPg(-1)" '+(pg<=1?'disabled':'')+'>이전</button><span class="pinfo">'+pg+' / '+totalPg+' ('+filtered.length+(apiResults.length?'+'+apiResults.length:'')+'개)</span><button class="pbtn" onclick="chgPg(1)" '+(pg>=totalPg?'disabled':'')+'>다음</button></div>';v.innerHTML=h;document.getElementById('stDisp').textContent=(filtered.length+apiResults.length).toLocaleString();}
-function renderRead(){const v=document.getElementById('vRead');const r=getR();let readArts=arts.filter(a=>r[a.i]);readArts.sort((a,b)=>(r[b.i].lr||'').localeCompare(r[a.i].lr||''));const q=expandQ(document.getElementById('searchInput').value);if(q)readArts=readArts.filter(a=>matchQ(a.t||'',q));const totalPg=Math.ceil(readArts.length/PER)||1;const start=(pg-1)*PER,end=start+PER;const page=readArts.slice(start,end);let h='<p style="color:var(--tx2);margin-bottom:1rem">총 '+readArts.length+'개 읽음</p><div class="alist">';if(!page.length)h+='<div class="empty" style="grid-column:1/-1"><div class="icon">📖</div><div class="msg">아직 읽은 문헌이 없습니다</div></div>';else page.forEach(a=>h+=mkCard(a));h+='</div><div class="pagi"><button class="pbtn" onclick="chgPg(-1)" '+(pg<=1?'disabled':'')+'>이전</button><span class="pinfo">'+pg+' / '+totalPg+'</span><button class="pbtn" onclick="chgPg(1)" '+(pg>=totalPg?'disabled':'')+'>다음</button></div>';v.innerHTML=h;document.getElementById('stDisp').textContent=readArts.length.toLocaleString();}
+function renderCatArt(){const v=document.getElementById('vCat');const cd=CATS[curCat];const ca=arts.filter(a=>a.cats&&a.cats.includes(curCat));const subs=Object.keys(cd.sub||{});let filtered=curSub?ca.filter(a=>a.subs&&a.subs.includes(curSub)):ca;if(curFilter==='read')filtered=filtered.filter(a=>isR(a.i));else if(curFilter==='unread')filtered=filtered.filter(a=>!isR(a.i));const raw0=document.getElementById('searchInput').value.trim();const q=expandQ(raw0);if(q)filtered=filtered.filter(a=>matchQWithSynonyms(a.t||'',q,raw0));let h='<div class="bread"><a onclick="backToCats()">카테고리</a> <span>›</span> <span>'+curCat+'</span>'+(curSub?' <span>›</span> <span>'+curSub+'</span>':'')+'</div>';h+='<div class="filters"><button class="fbtn '+(curFilter==='all'?'on':'')+'" onclick="setFilter(\'all\')">전체 ('+ca.length+')</button><button class="fbtn '+(curFilter==='read'?'on':'')+'" onclick="setFilter(\'read\')">읽음</button><button class="fbtn '+(curFilter==='unread'?'on':'')+'" onclick="setFilter(\'unread\')">안읽음</button></div>';if(subs.length){h+='<div class="subtags" style="margin-bottom:1.5rem"><span class="subtag '+(!curSub?'on':'')+'" onclick="setSub(null)">전체</span>';subs.forEach(s=>{const sc=ca.filter(a=>a.subs&&a.subs.includes(s)).length;h+='<span class="subtag '+(curSub===s?'on':'')+'" onclick="setSub(\''+s+'\')">'+s+' ('+sc+')</span>';});h+='</div>';}const totalPg=Math.ceil(filtered.length/PER)||1;const start=(pg-1)*PER,end=start+PER;const page=filtered.slice(start,end);h+='<div class="alist">';if(!page.length)h+='<div class="empty" style="grid-column:1/-1"><div class="icon">📚</div><div class="msg">문헌이 없습니다</div></div>';else page.forEach(a=>h+=mkCard(a));h+='</div>';h+='<div class="pagi"><button class="pbtn" onclick="chgPg(-1)" '+(pg<=1?'disabled':'')+'>이전</button><span class="pinfo">'+pg+' / '+totalPg+' ('+filtered.length+'개)</span><button class="pbtn" onclick="chgPg(1)" '+(pg>=totalPg?'disabled':'')+'>다음</button></div>';v.innerHTML=h;document.getElementById('stDisp').textContent=filtered.length.toLocaleString();}
+function renderAll(){const v=document.getElementById('vAll');let filtered=[...arts];if(curFilter==='read')filtered=filtered.filter(a=>isR(a.i));else if(curFilter==='unread')filtered=filtered.filter(a=>!isR(a.i));const raw1=document.getElementById('searchInput').value.trim();const q=expandQ(raw1);if(q)filtered=filtered.filter(a=>matchQWithSynonyms(a.t||'',q,raw1));let extraH='';if(q&&apiResults.length>0){extraH='<div style="margin:1rem 0;padding:.8rem 1rem;background:var(--bg3);border:1px solid var(--ac);border-radius:8px;color:var(--ac);font-size:.85rem">🔍 본문 검색으로 '+apiResults.length+'개 추가 결과 발견</div><div class="alist">';apiResults.forEach(a=>extraH+=mkCard(a));extraH+='</div>';}if(q&&apiSearching){extraH='<div style="margin:1rem 0;padding:.8rem 1rem;background:var(--bg3);border-radius:8px;color:var(--tx2);font-size:.85rem">🔄 본문 검색 중...</div>';}const totalPg=Math.ceil(filtered.length/PER)||1;const start=(pg-1)*PER,end=start+PER;const page=filtered.slice(start,end);let h='<div class="filters"><button class="fbtn '+(curFilter==='all'?'on':'')+'" onclick="setFilter(\'all\')">전체 ('+arts.length+')</button><button class="fbtn '+(curFilter==='read'?'on':'')+'" onclick="setFilter(\'read\')">읽음</button><button class="fbtn '+(curFilter==='unread'?'on':'')+'" onclick="setFilter(\'unread\')">안읽음</button></div>';h+='<div class="alist">';if(!page.length&&!apiResults.length)h+='<div class="empty" style="grid-column:1/-1"><div class="icon">📚</div><div class="msg">문헌이 없습니다</div></div>';else page.forEach(a=>h+=mkCard(a));h+='</div>';h+=extraH;h+='<div class="pagi"><button class="pbtn" onclick="chgPg(-1)" '+(pg<=1?'disabled':'')+'>이전</button><span class="pinfo">'+pg+' / '+totalPg+' ('+filtered.length+(apiResults.length?'+'+apiResults.length:'')+'개)</span><button class="pbtn" onclick="chgPg(1)" '+(pg>=totalPg?'disabled':'')+'>다음</button></div>';v.innerHTML=h;document.getElementById('stDisp').textContent=(filtered.length+apiResults.length).toLocaleString();}
+function renderRead(){const v=document.getElementById('vRead');const r=getR();let readArts=arts.filter(a=>r[a.i]);readArts.sort((a,b)=>(r[b.i].lr||'').localeCompare(r[a.i].lr||''));const raw2=document.getElementById('searchInput').value.trim();const q=expandQ(raw2);if(q)readArts=readArts.filter(a=>matchQWithSynonyms(a.t||'',q,raw2));const totalPg=Math.ceil(readArts.length/PER)||1;const start=(pg-1)*PER,end=start+PER;const page=readArts.slice(start,end);let h='<p style="color:var(--tx2);margin-bottom:1rem">총 '+readArts.length+'개 읽음</p><div class="alist">';if(!page.length)h+='<div class="empty" style="grid-column:1/-1"><div class="icon">📖</div><div class="msg">아직 읽은 문헌이 없습니다</div></div>';else page.forEach(a=>h+=mkCard(a));h+='</div><div class="pagi"><button class="pbtn" onclick="chgPg(-1)" '+(pg<=1?'disabled':'')+'>이전</button><span class="pinfo">'+pg+' / '+totalPg+'</span><button class="pbtn" onclick="chgPg(1)" '+(pg>=totalPg?'disabled':'')+'>다음</button></div>';v.innerHTML=h;document.getElementById('stDisp').textContent=readArts.length.toLocaleString();}
 function fmtDate(ds){if(!ds)return '';try{const d=new Date(ds);return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');}catch(e){return '';}}
 function mkCard(a){const ri=getRInfo(a.i);const read=!!ri;const dt=fmtDate(a.d);return '<div class="acard'+(read?' read':'')+'"><div class="tt">'+a.t+'</div><div class="meta">'+(dt?'<span class="adate">'+dt+'</span>':'')+(a.cats||[]).map(c=>'<span class="cat">'+c+'</span>').join('')+'</div>'+(ri?'<div class="rinfo">📖 '+ri.c+'회 읽음 · 최근 '+ri.lr+'</div>':'')+'<div class="abtn"><a href="'+a.l+'" target="_blank" class="alink" onclick="markR('+a.i+')">읽기 →</a><button class="rbtn'+(read?' done':'')+'" onclick="togR('+a.i+')">'+(read?'✓ 읽음':'읽음 표시')+'</button></div></div>';}
 function backToCats(){curCat=null;curSub=null;curFilter='all';pg=1;render();}
@@ -174,12 +187,163 @@ function setSub(s){curSub=s;pg=1;render();}
 function setFilter(f){curFilter=f;pg=1;render();}
 function chgPg(d){pg+=d;render();window.scrollTo({top:0,behavior:'smooth'});}
 document.querySelectorAll('.tab').forEach(t=>{t.addEventListener('click',()=>{document.querySelectorAll('.tab').forEach(x=>x.classList.remove('on'));document.querySelectorAll('.view').forEach(x=>x.classList.remove('on'));t.classList.add('on');curView=t.dataset.v;curFilter='all';pg=1;const map={cat:'vCat',all:'vAll',read:'vRead',set:'vSet'};document.getElementById(map[curView]).classList.add('on');if(curView==='cat'){curCat=null;curSub=null;}render();updateStats();});});
-let searchTimer;let apiResults=[];let apiSearching=false;
-const ABBR={rc:'rotator cuff',acl:'anterior cruciate ligament',pcl:'posterior cruciate ligament',mcl:'medial collateral ligament',lcl:'lateral collateral ligament',thr:'total hip replacement',tha:'total hip arthroplasty',tkr:'total knee replacement',tka:'total knee arthroplasty',tsa:'total shoulder arthroplasty',orif:'open reduction internal fixation',acj:'acromioclavicular joint',druj:'distal radioulnar joint',pipj:'proximal interphalangeal joint',dipj:'distal interphalangeal joint',mcpj:'metacarpophalangeal joint',avn:'avascular necrosis',oa:'osteoarthritis',ra:'rheumatoid arthritis',ddh:'developmental dysplasia hip',ctev:'congenital talipes equinovarus',ctr:'carpal tunnel release',cts:'carpal tunnel syndrome',scfe:'slipped capital femoral epiphysis',thr:'total hip replacement',rom:'range of motion',fx:'fracture',bka:'below knee amputation',aka:'above knee amputation'};
+let searchTimer;let apiResults=[];let apiSearching=false;let acIdx=-1;
+const sInput=document.getElementById('searchInput');
+const acDrop=document.getElementById('acDrop');
+const ABBR={
+'rc':'rotator cuff','rct':'rotator cuff tear','rca':'rotator cuff arthropathy',
+'acl':'anterior cruciate ligament','pcl':'posterior cruciate ligament',
+'mcl':'medial collateral ligament','lcl':'lateral collateral ligament',
+'tka':'total knee arthroplasty','tha':'total hip arthroplasty','tsa':'total shoulder arthroplasty',
+'rtsa':'reverse total shoulder arthroplasty','rsa':'reverse shoulder arthroplasty',
+'orif':'open reduction internal fixation','crif':'closed reduction internal fixation',
+'fnf':'femoral neck fracture','fn':'femoral neck',
+'ocd':'osteochondritis dissecans','avs':'avascular necrosis','avn':'avascular necrosis',
+'ddh':'developmental dysplasia hip','fai':'femoroacetabular impingement',
+'slap':'superior labrum anterior posterior','mpfl':'medial patellofemoral ligament',
+'tfcc':'triangular fibrocartilage complex','druj':'distal radioulnar joint',
+'crps':'complex regional pain syndrome','plc':'posterolateral corner',
+'hto':'high tibial osteotomy','uka':'unicompartmental knee arthroplasty',
+'pji':'periprosthetic joint infection','dvt':'deep vein thrombosis',
+'cts':'carpal tunnel syndrome','ctr':'carpal tunnel release',
+'fx':'fracture','dx':'diagnosis','tx':'treatment','sx':'surgery',
+'prp':'platelet rich plasma','bma':'bone marrow aspirate',
+'im':'intramedullary','imn':'intramedullary nail',
+'dhs':'dynamic hip screw','pfn':'proximal femoral nail',
+'liss':'less invasive stabilization system',
+'oa':'osteoarthritis','ra':'rheumatoid arthritis',
+'ctev':'congenital talipes equinovarus','scfe':'slipped capital femoral epiphysis',
+'rom':'range of motion','bka':'below knee amputation','aka':'above knee amputation'
+};
+const SYNONYMS={
+'brostrom':['ankle instability','lateral ankle','ankle ligament','ankle sprain','atfl','cfl','ankle reconstruction'],
+'latarjet':['shoulder instability','anterior instability','glenoid bone loss','coracoid transfer'],
+'bankart':['shoulder instability','anterior instability','labral','glenohumeral'],
+'lisfranc':['midfoot','tarsometatarsal'],
+'jones':['fifth metatarsal','5th metatarsal'],
+'monteggia':['ulna fracture','radial head'],
+'galeazzi':['radius fracture','distal radioulnar'],
+'terrible triad':['elbow dislocation','coronoid','radial head'],
+'hill-sachs':['shoulder dislocation','humeral head'],
+'segond':['acl','tibial plateau','lateral capsular']
+};
 function expandQ(q){let eq=q.toLowerCase().trim();for(const[ab,full]of Object.entries(ABBR)){const re=new RegExp('\\b'+ab+'\\b','gi');if(re.test(eq))eq=eq.replace(re,full);}return eq;}
 function matchQ(title,q){const t=title.toLowerCase();const words=q.split(/\s+/).filter(w=>w.length>0);return words.every(w=>t.includes(w));}
-async function apiSearch(q){if(!q||q.length<2)return;apiSearching=true;render();try{const url=SAPI.replace('QUERY',encodeURIComponent(q));for(let i=0;i<PX.length;i++){try{const r=await fetch(PX[i](url),{headers:{Accept:'application/json'}});if(r.ok){const d=await r.json();if(Array.isArray(d)){apiResults=d.map(x=>({i:x.id,t:x.title?.rendered||'',l:x.link,d:x.date||''})).filter(x=>!arts.find(a=>a.i===x.i));apiResults.forEach(a=>catArt(a));break;}}}catch(e){}}}catch(e){}finally{apiSearching=false;render();}}
-document.getElementById('searchInput').addEventListener('input',()=>{clearTimeout(searchTimer);apiResults=[];searchTimer=setTimeout(()=>{const raw=document.getElementById('searchInput').value.trim();const q=expandQ(raw);if(q&&curView!=='all'){document.querySelectorAll('.tab').forEach(x=>x.classList.remove('on'));document.querySelectorAll('.view').forEach(x=>x.classList.remove('on'));document.querySelector('.tab[data-v="all"]').classList.add('on');document.getElementById('vAll').classList.add('on');curView='all';curFilter='all';}pg=1;render();if(q.length>=2){const titleMatch=arts.filter(a=>matchQ(a.t||'',q));if(titleMatch.length<10)apiSearch(q);}},500);});
+function matchQWithSynonyms(title,q,rawQ){
+if(matchQ(title,q))return true;
+const raw=rawQ.toLowerCase().trim();
+for(const[term,syns]of Object.entries(SYNONYMS)){
+if(raw.includes(term)){
+const t=title.toLowerCase();
+for(const syn of syns){if(t.includes(syn))return true;}
+}}
+return false;
+}
+function highlightMatch(text,query){
+if(!query)return text;
+const eq=expandQ(query);
+const allWords=[...new Set([...query.toLowerCase().split(/\s+/),...eq.split(/\s+/)])];
+let result=text;
+allWords.forEach(w=>{
+if(w.length<2)return;
+const esc=w.replace(/[.*+?^${}()|[\]\\]/g,'\\$&');
+result=result.replace(new RegExp('('+esc+')','gi'),'<mark>$1</mark>');
+});
+return result;
+}
+function showAC(q){
+if(!q||q.length<1||!arts.length){acDrop.classList.remove('show');acDrop.innerHTML='';acIdx=-1;return;}
+const eq=expandQ(q);
+const words=eq.split(/\s+/).filter(w=>w.length>0);
+const raw=q.toLowerCase().trim();
+let scored=arts.map(a=>{
+const tl=(a.t||'').toLowerCase();
+const tw=tl.split(/[\s\-:,();\/\[\]]+/);
+let score=0;
+if(tl.includes(eq))score+=200;
+let expMatch=0;
+words.forEach(w=>{
+if(w.length<=2){if(tw.some(t=>t===w))score+=15;expMatch++;}
+else{if(tl.includes(w)){score+=15;expMatch++;}}
+});
+if(expMatch===words.length)score+=100;
+if(expMatch<words.length)score=0;
+if(score===0){
+for(const[term,syns]of Object.entries(SYNONYMS)){
+if(raw.includes(term)){for(const syn of syns){if(tl.includes(syn)){score+=30;break;}}}}
+}
+return{a:a,score:score};
+}).filter(x=>x.score>0).sort((a,b)=>b.score-a.score);
+if(!scored.length){
+acDrop.innerHTML='<div class="ac-empty">검색 결과가 없습니다</div>';
+acDrop.classList.add('show');acIdx=-1;return;
+}
+const total=scored.length;
+const show=scored.slice(0,10);
+let h='';
+show.forEach((x,i)=>{
+const a=x.a;
+const cats=(a.cats||[]).slice(0,2);
+const subs=(a.subs||[]).slice(0,2);
+h+='<div class="ac-item" data-idx="'+i+'" data-link="'+a.l+'" data-id="'+a.i+'">';
+h+='<div class="ac-title">'+highlightMatch(a.t,q)+'</div>';
+h+='<div class="ac-meta">'+cats.map(c=>'<span class="ac-cat">'+c+'</span>').join('')+subs.map(s=>'<span class="ac-sub">'+s+'</span>').join('')+'</div>';
+h+='</div>';
+});
+if(total>10)h+='<div class="ac-count">총 '+total+'개 결과 중 10개 표시 · Enter로 전체 검색</div>';
+acDrop.innerHTML=h;
+acDrop.classList.add('show');
+acIdx=-1;
+acDrop.querySelectorAll('.ac-item').forEach(el=>{
+el.addEventListener('mousedown',e=>{
+e.preventDefault();
+const id=parseInt(el.dataset.id);
+markR(id);
+window.open(el.dataset.link,'_blank');
+acDrop.classList.remove('show');
+});
+});
+}
+function acNav(dir){
+const items=acDrop.querySelectorAll('.ac-item');
+if(!items.length)return;
+items.forEach(x=>x.classList.remove('sel'));
+acIdx+=dir;
+if(acIdx<0)acIdx=items.length-1;
+if(acIdx>=items.length)acIdx=0;
+items[acIdx].classList.add('sel');
+items[acIdx].scrollIntoView({block:'nearest'});
+}
+async function apiSearch(q){if(!q||q.length<2)return;apiSearching=true;render();try{const url=SAPI.replace('QUERY',encodeURIComponent(q));for(let i=0;i<PX.length;i++){try{const r=await fetch(PX[i](url),{headers:{Accept:'application/json'}});if(r.ok){const d=await r.json();if(Array.isArray(d)){apiResults=d.map(x=>({i:x.id,t:x.title?.rendered||'',l:x.link,d:x.date||''})).filter(x=>!arts.find(a=>a.i===x.i)).filter(x=>!x.t.toLowerCase().startsWith('private:'));apiResults.forEach(a=>catArt(a));break;}}}catch(e){}}}catch(e){}finally{apiSearching=false;render();}}
+sInput.addEventListener('input',()=>{
+clearTimeout(searchTimer);apiResults=[];
+searchTimer=setTimeout(()=>{
+const raw=sInput.value.trim();
+const q=expandQ(raw);
+showAC(raw);
+if(q&&curView!=='all'){document.querySelectorAll('.tab').forEach(x=>x.classList.remove('on'));document.querySelectorAll('.view').forEach(x=>x.classList.remove('on'));document.querySelector('.tab[data-v="all"]').classList.add('on');document.getElementById('vAll').classList.add('on');curView='all';curFilter='all';}
+pg=1;render();
+if(q.length>=2){const titleMatch=arts.filter(a=>matchQWithSynonyms(a.t||'',q,raw));if(titleMatch.length<10)apiSearch(q);}
+},300);
+});
+sInput.addEventListener('keydown',e=>{
+if(e.key==='Enter'){
+e.preventDefault();
+if(acDrop.classList.contains('show')&&acIdx>=0){
+const sel=acDrop.querySelectorAll('.ac-item')[acIdx];
+if(sel){markR(parseInt(sel.dataset.id));window.open(sel.dataset.link,'_blank');}
+}else{
+const tabs=document.querySelectorAll('.tab');
+tabs.forEach(t=>{if(t.dataset.v==='all')t.click();});
+}
+acDrop.classList.remove('show');acIdx=-1;return;
+}
+if(!acDrop.classList.contains('show'))return;
+if(e.key==='ArrowDown'){e.preventDefault();acNav(1);}
+else if(e.key==='ArrowUp'){e.preventDefault();acNav(-1);}
+else if(e.key==='Escape'){acDrop.classList.remove('show');}
+});
+document.addEventListener('click',e=>{if(!e.target.closest('.search'))acDrop.classList.remove('show');});
 fetchAll();
 </script>
 </body>
